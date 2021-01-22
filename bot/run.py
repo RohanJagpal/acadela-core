@@ -43,6 +43,17 @@ async def on_ready():
 
     channels['adminRequests'] = bot.get_channel(801846950147391558)
 
+@bot.event
+async def on_raw_reaction_add(payload):
+    if payload.user_id == bot.user.id:
+        return
+
+    with open('data.json', 'r') as f:
+        data = json.load(f)
+
+    
+    
+
 @bot.command()
 async def changeyear(ctx, arg):
     if not ctx.author.id == 302471371319934997:
@@ -75,7 +86,22 @@ async def changeyear(ctx, arg):
     embed.add_field(name = '\u200b', value = '\u200b', inline = True)
     embed.add_field(name = 'Year Requested', value = arg, inline = False)
     embed.set_footer(text = FOOTER)
-    await channels['adminRequests'].send(embed = embed)
+
+    reqMsg = await channels['adminRequests'].send(embed = embed)
+    with open('data.json', 'r') as f:
+        data = json.load(f)
+        print(data)
+
+    newData = {'messageId':reqMsg.id, 'discordId':ctx.author.id, 'rbxId':robloxId, 'yearGroup':arg}
+    data['yearChangeQueue'].append(newData)
+
+    with open('data.json', 'w') as f:
+        json.dump(data, f, indent=4)
+
+    await reqMsg.add_reaction('✅')
+    await reqMsg.add_reaction('❎')
+
+    await success(ctx, 'Request submitted succesfully! You\'ll receive a message once your request is updated!')
 
     #{ "status": "ok", "primaryAccount": "569422833", "matchingAccount": null }
     #{ "status": "error", "error": "This user is not linked to Bloxlink." }
