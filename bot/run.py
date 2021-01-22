@@ -7,6 +7,14 @@ import json
 import asyncio
 
 YEAR_GROUPS = ['9M', '9S', '10M', '10S', '11']
+ROLES_TO_REMOVE = ['Year 9', 'Year 10', 'Year 11', 'Marlowe', 'Shakespeare', '10 Marlowe', '10 Shakespeare', '9 Marlowe', '9 Shakespeare']
+YEAR_ROLES = {
+    '9M':['Year 9', 'Marlowe', '9 Marlowe'],
+    '9S':['Year 9', 'Shakespeare', '9 Shakespeare'],
+    '10M':['Year 10', 'Marlowe', '10 Marlowe'],
+    '10S':['Year 10', 'Shakespeare', '10 Shakespeare'],
+    '11':['Year 11']
+}
 INITIAL_EXTENSIONS = []
 FOOTER = ''
 channels = {}
@@ -53,7 +61,10 @@ async def on_raw_reaction_add(payload):
 
     req = None
 
-    message = await bot.get_channel(801846950147391558).fetch_message(payload.message_id)
+    message = bot.get_channel(801846950147391558).get_message(payload.message_id)
+
+    if message == None:
+        return
 
     for reqLog in data['yearChangeQueue']:
         if reqLog['messageId'] == payload.message_id:
@@ -93,15 +104,55 @@ async def on_raw_reaction_add(payload):
         user = await bot.fetch_user(req['discordId'])
         if user == None:
             await error(message.channel, 'User not found. Notification not sent.')
-            return
+        else:
+            embed = discord.Embed(title = 'Year Group Request Accepted', description = 'Your year group request was accepted by a member of SLT!', color = 0x77DD77)
+            await user.send(embed = embed)
 
-        embed = discord.Embed(title = 'Year Group Request Accepted', description = 'Your year group request was accepted by a member of SLT!', color = 0x77DD77)
-        await user.send(embed = embed)
+            member = bot.get_guild(743642257080451193).get_member(user.id)
+
+            if member == None:
+                await error(message.channel, 'Member not found. Auto-role not possible.\n`get_member returned None.`')
+            else:
+                for role in member.roles:
+                    if role.Name in ROLES_TO_REMOVE:
+                        await member.remove_roles(role, reason = 'Change year request')
+                
+                for role in YEAR_ROLES[req['yearGroup']]:
+                    await member.add_roles(discord.utils.get(bot.get_guild(743642257080451193).roles, name=role), reason = 'Change year request')
+
+            url = "https://auth.roblox.com/v2/login"
+
+            payload="{}"
+            headers = {
+            'Content-Type': 'application/json',
+            'Cookie': 'GuestData=UserID=-606985113; RBXEventTrackerV2=CreateDate=1/22/2021 8:34:08 AM&rbxid=&browserid=77093773054; .ROBLOSECURITY=_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_69B2C9C148577AC408DE17A0DAB177C230FEF360A127EA9792C8DAADEF30E4013ABA4079081FBBDE10FF5F57F8709C54DB74C951F6FA2639C92A542C5AD72B4DCCDD9F2E683E5881A35EF96770C4C1A89F45E20D7E26680E7C0830630376C3FC0BC3CE525280D1A4C508A4803AC1F27F14549DEA0B900FA4568329D20BCDDDEC958E2EF101E85C839E4943F6B8204066633EC65C42E7FDFBF7A3052E95C965BB536189B1C15753AF334E321E07E5740B5BAE26A53721DFDEF87CE217DD58018B39F0784048ECEE53F88BCFDE92E5E2843313C864F2F6C8D14B10C8F618E462D519CFD2166465A436D1C2371A2FED4B9C4F1C3640938E1B3B1D32DB4BD785AA0F7323BD75A30F6B9C1CBA1CB2346FDB047B5F4137625524485B72261C66CD4BADFE440A64; .RBXID=_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiJmMDNjOGZiMC1jMWQ4LTRjZjktYTk4Ny1jYThkMjMyODU5YjUiLCJzdWIiOjk0MzMyMTkzOX0.jEfimXZproU8LVTl8GhrXXnwE-PxLGv65VoVXCSL4j0'
+            }
+
+            response = requests.request("POST", url, headers=headers, data=payload)
+
+            token = response.headers['x-csrf-token']
+
+            with open('config.json', 'r') as f:
+                user = json.load(f)['user']
+                password = json.load(f)['password']
+                cookie = json.load(f)['cookie']
+
+            payload="{\r\n    \"ctype\": \"username\",\r\n    \"cvalue\": \"{}\",\r\n    \"password\": \"{}\",\r\n    \".ROBLOSECURITY\": \"{}\"\r\n}".format(user, password, cookie)
+            headers = {
+            'x-csrf-token': token,
+            'Content-Type': 'application/json',
+            'Cookie': 'GuestData=UserID=-606985113; RBXEventTrackerV2=CreateDate=1/22/2021 8:34:08 AM&rbxid=&browserid=77093773054; .ROBLOSECURITY=_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_69B2C9C148577AC408DE17A0DAB177C230FEF360A127EA9792C8DAADEF30E4013ABA4079081FBBDE10FF5F57F8709C54DB74C951F6FA2639C92A542C5AD72B4DCCDD9F2E683E5881A35EF96770C4C1A89F45E20D7E26680E7C0830630376C3FC0BC3CE525280D1A4C508A4803AC1F27F14549DEA0B900FA4568329D20BCDDDEC958E2EF101E85C839E4943F6B8204066633EC65C42E7FDFBF7A3052E95C965BB536189B1C15753AF334E321E07E5740B5BAE26A53721DFDEF87CE217DD58018B39F0784048ECEE53F88BCFDE92E5E2843313C864F2F6C8D14B10C8F618E462D519CFD2166465A436D1C2371A2FED4B9C4F1C3640938E1B3B1D32DB4BD785AA0F7323BD75A30F6B9C1CBA1CB2346FDB047B5F4137625524485B72261C66CD4BADFE440A64; .RBXID=_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiJmMDNjOGZiMC1jMWQ4LTRjZjktYTk4Ny1jYThkMjMyODU5YjUiLCJzdWIiOjk0MzMyMTkzOX0.jEfimXZproU8LVTl8GhrXXnwE-PxLGv65VoVXCSL4j0'
+            }
+
+            response = requests.request("POST", url, headers=headers, data=payload)
+
+            if json.loads(response.text)['user'] == None:
+                await error(message.channel, 'Bot login failed. Manual group rank required.')
+            else:
+                pass
 
     await message.clear_reactions()
-
-    list(filter(reqLog.__ne__, data)) # THIS DOESNT WORK NEEDS FIXING
-
+    data.remove(reqLog)
     with open('data.json', 'w') as f:
          json.dump(data, f, indent=4)
 
