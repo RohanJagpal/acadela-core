@@ -51,8 +51,61 @@ async def on_raw_reaction_add(payload):
     with open('data.json', 'r') as f:
         data = json.load(f)
 
-    
-    
+    req = None
+
+    message = await bot.get_channel(801846950147391558).fetch_message(payload.message_id)
+
+    for reqLog in data['yearChangeQueue']:
+        if reqLog['messageId'] == payload.message_id:
+            req = reqLog
+
+    if req == None:
+        for reqLog in data['nameChangeQueue']:
+            if reqLog['messageId'] == payload.message_id:
+                req = reqLog
+
+    if req == None:
+        await error(message.channel, 'An error occurred. Please report this.\n`messageId not found.`')
+        return
+
+    if str(payload.emoji) == '❎':
+        embed = discord.Embed(title = 'Year Group Request Denied', description = '*This request has been denied by a member of SLT.*', color = 0xFF6961)
+        embed.add_field(name = 'RBX ID', value = req['rbxId'], inline = True)
+        embed.add_field(name = 'Year Requested', value = req['yearGroup'], inline = True)
+        
+        await message.edit(embed = embed)
+
+        user = await bot.fetch_user(req['discordId'])
+        if user == None:
+            await error(message.channel, 'User not found. Notification not sent.')
+            return
+
+        embed = discord.Embed(title = 'Year Group Request Denied', description = 'Your year group request was denied by a member of SLT!', color = 0xFF6961)
+        await user.send(embed = embed)
+
+    elif str(payload.emoji) == '✅':
+        embed = discord.Embed(title = 'Year Group Request Accepted', description = '*This request has been accepted by a member of SLT.*', color = 0x77DD77)
+        embed.add_field(name = 'RBX ID', value = req['rbxId'], inline=True)
+        embed.add_field(name = 'Year Requested', value = req['yearGroup'], inline = True)
+
+        await message.edit(embed = embed)
+
+        user = await bot.fetch_user(req['discordId'])
+        if user == None:
+            await error(message.channel, 'User not found. Notification not sent.')
+            return
+
+        embed = discord.Embed(title = 'Year Group Request Accepted', description = 'Your year group request was accepted by a member of SLT!', color = 0x77DD77)
+        await user.send(embed = embed)
+
+    await message.clear_reactions()
+
+    list(filter(reqLog.__ne__, data)) # THIS DOESNT WORK NEEDS FIXING
+
+    with open('data.json', 'w') as f:
+         json.dump(data, f, indent=4)
+
+
 
 @bot.command()
 async def changeyear(ctx, arg):
@@ -68,7 +121,7 @@ async def changeyear(ctx, arg):
     response = json.loads(r.text)
 
     if response['status'] == 'error':
-        await error(ctx, 'An error occured. Please report this and try again.\n`API call returned bad response.`')
+        await error(ctx, 'An error occurred. Please report this and try again.\n`API call returned bad response.`')
         return
 
     robloxId = response['primaryAccount']
@@ -90,7 +143,6 @@ async def changeyear(ctx, arg):
     reqMsg = await channels['adminRequests'].send(embed = embed)
     with open('data.json', 'r') as f:
         data = json.load(f)
-        print(data)
 
     newData = {'messageId':reqMsg.id, 'discordId':ctx.author.id, 'rbxId':robloxId, 'yearGroup':arg}
     data['yearChangeQueue'].append(newData)
