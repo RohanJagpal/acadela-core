@@ -261,7 +261,11 @@ async def changeyear(ctx, arg):
         await error(ctx, 'An error occurred. Please report this and try again.\n`API call returned bad response.`')
         return
 
-    robloxId = response['matchingAccount']
+    if response['matchingAccount'] == None:
+        robloxId = response['primaryAccount']
+    else:
+        robloxId = response['matchingAccount']
+
     url = 'https://users.roblox.com/v1/users/{}'.format(robloxId)
     r = requests.get(url)
     response = json.loads(r.text)
@@ -308,7 +312,11 @@ async def changename(ctx, arg, arg2):
         await error(ctx, 'An error occured. Please report this and try again.\n`API call returned bad response.`')
         return
 
-    robloxId = response['matchingAccount']
+    if response['matchingAccount'] == None:
+        robloxId = response['primaryAccount']
+    else:
+        robloxId = response['matchingAccount']
+
     url = 'https://users.roblox.com/v1/users/{}'.format(robloxId)
     r = requests.get(url)
     response = json.loads(r.text)
