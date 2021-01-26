@@ -52,8 +52,8 @@ async def on_ready():
     print(f'\n\nLogged in as: {bot.user.name} - {bot.user.id}\nVersion: {discord.__version__}\n')
 
     # Changes our bots Playing Status.
-    activity = discord.Activity(name = 'rj code me', type=discord.ActivityType.watching)
-    await bot.change_presence(status=discord.Status.idle, activity=activity)
+    activity = discord.Activity(name = 'Acadela Academy', type=discord.ActivityType.watching)
+    await bot.change_presence(status=discord.Status.online, activity=activity)
     print('Successfully logged in and booted...!')
 
     channels['adminRequests'] = bot.get_channel(801846950147391558)
