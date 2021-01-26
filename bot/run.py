@@ -253,7 +253,7 @@ async def changeyear(ctx, arg):
         await error(ctx, 'Invalid year group. Please try again.')
         return
 
-    url = 'https://api.blox.link/v1/user/{}'.format(str(ctx.author.id))
+    url = 'https://api.blox.link/v1/user/{}?guild=743642257080451193'.format(str(ctx.author.id))
     r = requests.get(url)
     response = json.loads(r.text)
 
@@ -261,7 +261,7 @@ async def changeyear(ctx, arg):
         await error(ctx, 'An error occurred. Please report this and try again.\n`API call returned bad response.`')
         return
 
-    robloxId = response['primaryAccount']
+    robloxId = response['matchingAccount']
     url = 'https://users.roblox.com/v1/users/{}'.format(robloxId)
     r = requests.get(url)
     response = json.loads(r.text)
@@ -300,7 +300,7 @@ async def changename(ctx, arg, arg2):
     arg = arg + ' ' + arg2
     arg = arg.title()
 
-    url = 'https://api.blox.link/v1/user/{}'.format(str(ctx.author.id))
+    url = 'https://api.blox.link/v1/user/{}?guild=743642257080451193'.format(str(ctx.author.id))
     r = requests.get(url)
     response = json.loads(r.text)
 
@@ -308,7 +308,7 @@ async def changename(ctx, arg, arg2):
         await error(ctx, 'An error occured. Please report this and try again.\n`API call returned bad response.`')
         return
 
-    robloxId = response['primaryAccount']
+    robloxId = response['matchingAccount']
     url = 'https://users.roblox.com/v1/users/{}'.format(robloxId)
     r = requests.get(url)
     response = json.loads(r.text)
