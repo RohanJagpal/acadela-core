@@ -143,7 +143,12 @@ async def on_raw_reaction_add(payload):
                 await error(message.channel, 'User not found. Notification not sent.')
             else:
                 embed = discord.Embed(title = 'Year Group Request Accepted', description = 'Your year group request was accepted by a member of SLT!', color = 0x77DD77)
-                await user.send(embed = embed)
+                try:
+                    await user.send(embed = embed)
+                except discord.errors.Forbidden:
+                    await error(message.channel, 'An error occurred. User has DMs turned off or has left the server.\n`user.send raised Forbidden.`')
+                else:
+                    await error(message.channel, 'An unknown exception occurred.')
 
                 member = await bot.get_guild(743642257080451193).fetch_member(user.id)
 
@@ -152,10 +157,20 @@ async def on_raw_reaction_add(payload):
                 else:
                     for role in member.roles:
                         if role.name in ROLES_TO_REMOVE:
-                            await member.remove_roles(role, reason = 'Change year request')
+                            try:
+                                await member.remove_roles(role, reason = 'Change year request')
+                            except discord.HTTPException:
+                                await error(message.channel, 'An error occurred. Old roles could not be removed.\n`member.remove_roles raised HTTPError.`')
+                            else:
+                                await error(message.channel, 'An unknown exception occurred.')
                     
                     for role in YEAR_ROLES[req['yearGroup'].upper()]:
-                        await member.add_roles(discord.utils.get(bot.get_guild(743642257080451193).roles, name=role), reason = 'Change year request')
+                        try:
+                            await member.add_roles(discord.utils.get(bot.get_guild(743642257080451193).roles, name=role), reason = 'Change year request')
+                        except discord.HTTPException:
+                            await error(message.channel, 'An error occurred. New roles could not be given.\n`member.add_roles raised HTTPException.`')
+                        else:
+                            await error(message.channel, 'An unknown exception occurred.')
 
                 url = "https://auth.roblox.com/v2/login"
 
