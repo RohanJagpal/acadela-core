@@ -233,6 +233,8 @@ async def on_raw_reaction_add(payload):
                     response = json.loads(r.text)
                     userName = response['displayName']
                     newNick = req['nameRequested'] + ' - ' + userName
+                    if len(newNick) >= 32:
+                        newNick = newNick[:30]
                     await member.edit(nick = newNick, reason = 'Change name request')
 
             await message.clear_reactions()
